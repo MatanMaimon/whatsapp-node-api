@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "declaration": true,
+    // "experimental-json-modules"
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "jsx": "react",
+    "module": "ES6",
+    "moduleResolution": "node",
+    "noImplicitAny": true,
+    "sourceMap": true,
+    "baseUrl": "./",
+    "target": "es5",
+    "paths": {
+      "Assets/*": ["./src/assets/*"],
+      "Components/*": ["./src/Components/*"],
+      "Constants/*": ["./src/Constants/*"],
+      "Pages/*": ["./src/Pages/*"],
+      "State/*": ["./src/state/*"],
+      "Types/*": ["src/types/*"],
+      "Root/*": ["./*"]
+    }
+  },
+  // "exclude": ["node_modules"],
+  // "exclude": ["node_modules", "build", "scripts"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules/**"]
+}

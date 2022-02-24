@@ -1,7 +1,0 @@
-{
-    "port":5000,
-    "webhook":{
-        "enabled":false,
-        "path":""
-    }
-}
