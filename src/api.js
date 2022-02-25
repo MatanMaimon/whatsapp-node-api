@@ -33,6 +33,7 @@ if (fs.existsSync(SESSION_FILE_PATH)) {
 
 process.title = "whatsapp-node-api";
 export const client = new Client({
+  authTimeoutMs: 900000,
   puppeteer: {
     headless: true,
     args: [
