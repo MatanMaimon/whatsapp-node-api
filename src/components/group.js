@@ -1,16 +1,20 @@
 import express from "express";
-import * as WAWeb from "whatsapp-web.js";
+import WAWeb from "whatsapp-web.js";
 import request from "request";
 import vuri from "valid-url";
 import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const { MessageMedia, Location } = WAWeb;
 
 const router = express.Router();
 
-const mediadownloader = (url, path, callback) => {
+const mediadownloader = (url, tempPath, callback) => {
   request.head(url, (err, res, body) => {
-    request(url).pipe(fs.createWriteStream(path)).on("close", callback);
+    request(url).pipe(fs.createWriteStream(tempPath)).on("close", callback);
   });
 };
 
@@ -59,8 +63,8 @@ router.post("/sendimage/:chatname", async (req, res) => {
       client.getChats().then((data) => {
         data.forEach((chat) => {
           if (chat.id.server === "g.us" && chat.name === chatname) {
-            if (!fs.existsSync("./temp")) {
-              fs.mkdirSync("./temp");
+            if (!fs.existsSync(path.resolve(__dirname, "/temp"))) {
+              fs.mkdirSync(path.resolve(__dirname, "/temp"));
             }
 
             let media = new MessageMedia("image/png", image);
@@ -74,19 +78,21 @@ router.post("/sendimage/:chatname", async (req, res) => {
                     status: "success",
                     message: `Message successfully send to ${chatname}`,
                   });
-                  fs.unlinkSync(path);
                 }
               });
           }
         });
       });
     } else if (vuri.isWebUri(image)) {
-      var path = "./temp/" + image.split("/").slice(-1)[0];
+      var tmpPath = path.resolve(
+        __dirname,
+        "/temp/" + image.split("/").slice(-1)[0]
+      );
       client.getChats().then((data) => {
         data.forEach((chat) => {
           if (chat.id.server === "g.us" && chat.name === chatname) {
-            mediadownloader(image, path, () => {
-              let media = MessageMedia.fromFilePath(path);
+            mediadownloader(image, tmpPath, () => {
+              let media = MessageMedia.fromFilePath(tmpPath);
               client
                 .sendMessage(chat.id._serialized, media, {
                   caption: caption || "",
@@ -97,7 +103,7 @@ router.post("/sendimage/:chatname", async (req, res) => {
                       status: "success",
                       message: `Message successfully send to ${chatname}`,
                     });
-                    fs.unlinkSync(path);
+                    fs.unlinkSync(tmpPath);
                   }
                 });
             });
@@ -130,8 +136,8 @@ router.post("/sendpdf/:chatname", async (req, res) => {
       client.getChats().then((data) => {
         data.some((chat) => {
           if (chat.id.server === "g.us" && chat.name === chatname) {
-            if (!fs.existsSync("./temp")) {
-              fs.mkdirSync("./temp");
+            if (!fs.existsSync(path.resolve(__dirname, "/temp"))) {
+              fs.mkdirSync(path.resolve(__dirname, "/temp"));
             }
             let media = new MessageMedia("application/pdf", pdf);
             client.sendMessage(chat.id._serialized, media).then((response) => {
@@ -140,7 +146,6 @@ router.post("/sendpdf/:chatname", async (req, res) => {
                   status: "success",
                   message: `Message successfully send to ${chatname}`,
                 });
-                fs.unlinkSync(path);
               }
             });
             return true;
@@ -148,12 +153,15 @@ router.post("/sendpdf/:chatname", async (req, res) => {
         });
       });
     } else if (vuri.isWebUri(pdf)) {
-      var path = "./temp/" + pdf.split("/").slice(-1)[0];
+      var tmpPath = path.resolve(
+        __dirname,
+        "/temp/" + image.split("/").slice(-1)[0]
+      );
       client.getChats().then((data) => {
         data.some((chat) => {
           if (chat.id.server === "g.us" && chat.name === chatname) {
-            mediadownloader(image, path, () => {
-              let media = MessageMedia.fromFilePath(path);
+            mediadownloader(image, tmpPath, () => {
+              let media = MessageMedia.fromFilePath(tmpPath);
               client
                 .sendMessage(chat.id._serialized, media)
                 .then((response) => {
@@ -162,7 +170,7 @@ router.post("/sendpdf/:chatname", async (req, res) => {
                       status: "success",
                       message: `Message successfully send to ${chatname}`,
                     });
-                    fs.unlinkSync(path);
+                    fs.unlinkSync(tmpPath);
                   }
                 });
             });

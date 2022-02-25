@@ -1,17 +1,21 @@
 import express from "express";
-import * as WAWeb from "whatsapp-web.js";
+import WAWeb from "whatsapp-web.js";
 import request from "request";
 import vuri from "valid-url";
 import fs from "fs";
 import { client } from "../api.js";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const { MessageMedia, Location } = WAWeb;
 
 const router = express.Router();
 
-const mediadownloader = (url, path, callback) => {
+const mediadownloader = (url, tmpPath, callback) => {
   request.head(url, (err, res, body) => {
-    request(url).pipe(fs.createWriteStream(path)).on("close", callback);
+    request(url).pipe(fs.createWriteStream(tmpPath)).on("close", callback);
   });
 };
 
@@ -63,13 +67,16 @@ router.post("/sendimage/:phone", async (req, res) => {
           }
         });
     } else if (vuri.isWebUri(image)) {
-      if (!fs.existsSync("./temp")) {
-        await fs.mkdirSync("./temp");
+      if (!fs.existsSync(path.resolve(__dirname, "/temp"))) {
+        fs.mkdirSync(path.resolve(__dirname, "/temp"));
       }
 
-      var path = "./temp/" + image.split("/").slice(-1)[0];
-      mediadownloader(image, path, () => {
-        let media = MessageMedia.fromFilePath(path);
+      var tmpPath = path.resolve(
+        __dirname,
+        "/temp/" + image.split("/").slice(-1)[0]
+      );
+      mediadownloader(image, tmpPath, () => {
+        let media = MessageMedia.fromFilePath(tmpPath);
 
         client
           .sendMessage(`${phone}@c.us`, media, { caption: caption || "" })
@@ -79,7 +86,7 @@ router.post("/sendimage/:phone", async (req, res) => {
                 status: "success",
                 message: `MediaMessage successfully sent to ${phone}`,
               });
-              fs.unlinkSync(path);
+              fs.unlinkSync(tmpPath);
             }
           });
       });
@@ -116,20 +123,23 @@ router.post("/sendpdf/:phone", async (req, res) => {
         }
       });
     } else if (vuri.isWebUri(pdf)) {
-      if (!fs.existsSync("./temp")) {
-        await fs.mkdirSync("./temp");
+      if (!fs.existsSync(path.resolve(__dirname, "/temp"))) {
+        fs.mkdirSync(path.resolve(__dirname, "/temp"));
       }
 
-      var path = "./temp/" + pdf.split("/").slice(-1)[0];
-      mediadownloader(pdf, path, () => {
-        let media = MessageMedia.fromFilePath(path);
+      var tmpPath = path.resolve(
+        __dirname,
+        "/temp/" + pdf.split("/").slice(-1)[0]
+      );
+      mediadownloader(pdf, tmpPath, () => {
+        let media = MessageMedia.fromFilePath(tmpPath);
         client.sendMessage(`${phone}@c.us`, media).then((response) => {
           if (response.id.fromMe) {
             res.send({
               status: "success",
               message: `MediaMessage successfully sent to ${phone}`,
             });
-            fs.unlinkSync(path);
+            fs.unlinkSync(tmpPath);
           }
         });
       });
