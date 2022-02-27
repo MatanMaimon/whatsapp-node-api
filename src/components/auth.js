@@ -1,3 +1,4 @@
+import { exec } from "child_process";
 import express from "express";
 import fs from "fs";
 import path from "path";
@@ -10,12 +11,10 @@ const router = express.Router();
 
 const logout = async () => {
   try {
-    const clientState = await client?.getState();
-    clientState && client?.logout();
-    // fs.existsSync(__dirname + "/last.qr") &&
-    //   fs.unlinkSync(__dirname + "/last.qr");
     fs.existsSync(SESSION_FILE_PATH) && fs.unlinkSync(SESSION_FILE_PATH);
-    // console.info("aaaa");
+    exec("pm2 reload all");
+    // const clientState = await client?.getState();
+    // clientState && client?.logout();
   } catch (e) {
     console.error(e);
   }
