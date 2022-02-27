@@ -5,7 +5,7 @@
   "main": "api.js",
   "type": "module",
   "scripts": {
-    "start-pm2": "pm2 start ./pm2-process.json",
+    "pm2": "pm2 start ./pm2-process.json",
     "start": "nodemon --experimental-json-modules ./src/api.js --watch ./src",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

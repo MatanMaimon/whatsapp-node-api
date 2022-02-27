@@ -13,6 +13,7 @@ import * as chatRoute from "./components/chatting.js";
 import * as groupRoute from "./components/group.js";
 import * as authRoute from "./components/auth.js";
 import * as contactRoute from "./components/contact.js";
+import { readFile } from "fs/promises";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -22,11 +23,22 @@ export const SESSION_FILE_PATH =
 
 let sessionCfg;
 
+const sessionFileUrl =
+  (process.platform === "win32" ? "file://" : "") + SESSION_FILE_PATH;
+
+// const json = JSON.parse(
+//   await readFile(new URL(sessionFileUrl, import.meta.url))
+// );
+// console.log("json");
+// console.log(json);
+
 if (fs.existsSync(SESSION_FILE_PATH)) {
-  const { default: sessionCfg } = await import(
-    (process.platform === "win32" ? "file://" : "") + SESSION_FILE_PATH,
-    { assert: { type: "json" } }
+  const sessionCfg = JSON.parse(
+    await readFile(new URL(sessionFileUrl, import.meta.url))
   );
+  // const { default: sessionCfg } = await import(sessionFileUrl, {
+  //   assert: { type: "json" },
+  // });
   console.log("sessionCfg:");
   console.log(sessionCfg);
 }
