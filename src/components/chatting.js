@@ -176,15 +176,24 @@ router.post("/sendlocation/:phone", async (req, res) => {
   }
 });
 
-router.get("/getchatbyid/:phone", async (req, res) => {
+router.get("/getchatbyid/:phone/:limit", async (req, res) => {
   let phone = req.params.phone;
+  let limit = req.params.limit || 5;
   if (phone == undefined) {
     res.send({ status: "error", message: "please enter valid phone number" });
   } else {
     client
       .getChatById(`${phone}@c.us`)
-      .then((chat) => {
-        res.send({ status: "success", message: chat });
+      .then(async (chat) => {
+
+        const chatMessages = await chat.fetchMessages({limit});
+        res.send({
+          status: "success",
+          message: {
+            chat: chat,
+            chatMessages 
+          }
+        });
       })
       .catch(() => {
         console.error("getchaterror");
@@ -199,7 +208,8 @@ router.get("/getchats", async (req, res) => {
     .then((chats) => {
       res.send({ status: "success", message: chats });
     })
-    .catch(() => {
+    .catch((e) => {
+      console.log(e);
       res.send({ status: "error", message: "getchatserror" });
     });
 });
