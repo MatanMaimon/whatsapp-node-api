@@ -67,29 +67,30 @@ router.post("/sendimage/:phone", async (req, res) => {
           }
         });
     } else if (vuri.isWebUri(image)) {
-      if (!fs.existsSync(path.resolve(__dirname, "/temp"))) {
-        fs.mkdirSync(path.resolve(__dirname, "/temp"));
-      }
+      // if (!fs.existsSync(path.resolve(__dirname, "/temp"))) {
+      //   fs.mkdirSync(path.resolve(__dirname, "/temp"));
+      // }
 
-      var tmpPath = path.resolve(
-        __dirname,
-        "/temp/" + image.split("/").slice(-1)[0]
-      );
-      mediadownloader(image, tmpPath, () => {
-        let media = MessageMedia.fromFilePath(tmpPath);
+      // var tmpPath = path.resolve(
+      //   __dirname,
+      //   "/temp/" + image.split("/").slice(-1)[0]
+      // );
+      // mediadownloader(image, tmpPath, () => {
+      // let media = MessageMedia.fromFilePath(tmpPath);
+      let media = await MessageMedia.fromUrl(image);
 
-        client
-          .sendMessage(`${phone}@c.us`, media, { caption: caption || "" })
-          .then((response) => {
-            if (response.id.fromMe) {
-              res.send({
-                status: "success",
-                message: `MediaMessage successfully sent to ${phone}`,
-              });
-              fs.unlinkSync(tmpPath);
-            }
-          });
-      });
+      client
+        .sendMessage(`${phone}@c.us`, media, { caption: caption || "" })
+        .then((response) => {
+          if (response.id.fromMe) {
+            res.send({
+              status: "success",
+              message: `MediaMessage successfully sent to ${phone}`,
+            });
+            // fs.unlinkSync(tmpPath);
+          }
+        });
+      // });
     } else {
       res.send({
         status: "error",
@@ -185,19 +186,18 @@ router.get("/getchatbyid/:phone/:limit", async (req, res) => {
     client
       .getChatById(`${phone}@c.us`)
       .then(async (chat) => {
-
-        const chatMessages = await chat.fetchMessages({limit});
+        const chatMessages = await chat.fetchMessages({ limit });
         res.send({
           status: "success",
           message: {
             chat: chat,
-            chatMessages 
-          }
+            chatMessages,
+          },
         });
       })
-      .catch(() => {
+      .catch((e) => {
         console.error("getchaterror");
-        res.send({ status: "error", message: "getchaterror" });
+        res.send({ status: "error", message: "getchaterror", sourceMsg: e });
       });
   }
 });

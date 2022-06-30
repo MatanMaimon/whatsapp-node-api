@@ -6,14 +6,16 @@ import axios from "axios";
 import shelljs from "shelljs";
 import "dotenv/config";
 import config from "./config.js";
-import { Client } from "whatsapp-web.js";
+import wwPkg from "whatsapp-web.js";
 import { fileURLToPath } from "url";
+import { readFile } from "fs/promises";
 
 import * as chatRoute from "./components/chatting.js";
 import * as groupRoute from "./components/group.js";
 import * as authRoute from "./components/auth.js";
 import * as contactRoute from "./components/contact.js";
-import { readFile } from "fs/promises";
+
+const { Client, LocalAuth } = wwPkg;
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -26,36 +28,33 @@ let sessionCfg;
 const sessionFileUrl =
   (process.platform === "win32" ? "file://" : "") + SESSION_FILE_PATH;
 
-// const json = JSON.parse(
-//   await readFile(new URL(sessionFileUrl, import.meta.url))
-// );
-// console.log("json");
-// console.log(json);
-
 if (fs.existsSync(SESSION_FILE_PATH)) {
   const sessionCfg = JSON.parse(
     await readFile(new URL(sessionFileUrl, import.meta.url))
   );
-  // const { default: sessionCfg } = await import(sessionFileUrl, {
-  //   assert: { type: "json" },
-  // });
   console.log("sessionCfg:");
   console.log(sessionCfg);
 }
 
 process.title = "whatsapp-node-api";
+// export const client = new Client({
+//   authTimeoutMs: 900000,
+//   puppeteer: {
+//     headless: true,
+//     args: [
+//       "--no-sandbox",
+//       "--disable-setuid-sandbox",
+//       "--unhandled-rejections=strict",
+//     ],
+//   },
+//   session: sessionCfg,
+// });
 export const client = new Client({
-  authTimeoutMs: 900000,
-  puppeteer: {
-    headless: true,
-    args: [
-      "--no-sandbox",
-      "--disable-setuid-sandbox",
-      "--unhandled-rejections=strict",
-    ],
-  },
-  session: sessionCfg,
+  // authStrategy: new LocalAuth(),
+  puppeteer: { headless: true },
 });
+
+global.authed = false;
 
 let authed = false;
 
@@ -69,22 +68,20 @@ app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 client.on("qr", (qr) => {
-  // if (!fs.existsSync(__dirname, `components/last.qr`)) {
   console.log("generating qr code..");
   fs.writeFileSync(path.resolve(__dirname, `components/last.qr`), qr);
-  // }
 });
 
 client.on("authenticated", (session) => {
   console.log("AUTH!");
-  sessionCfg = session;
+  // sessionCfg = session;
 
-  fs.writeFile(SESSION_FILE_PATH, JSON.stringify(session), function (err) {
-    if (err) {
-      console.error(err);
-    }
-    authed = true;
-  });
+  // fs.writeFile(SESSION_FILE_PATH, JSON.stringify(session), function (err) {
+  //   if (err) {
+  //     console.error(err);
+  //   }
+  // });
+  authed = true;
 
   try {
     fs.unlinkSync(__dirname, "components/last.qr");
@@ -93,7 +90,7 @@ client.on("authenticated", (session) => {
 
 client.on("auth_failure", () => {
   console.log("AUTH Failed !");
-  sessionCfg = "";
+  // sessionCfg = "";
   process.exit();
 });
 
@@ -110,6 +107,9 @@ client.on("message", async (msg) => {
     }
     axios.post(config.webhook.path, { msg });
   }
+});
+client.on("disconnected", () => {
+  console.log("disconnected");
 });
 client.initialize();
 
