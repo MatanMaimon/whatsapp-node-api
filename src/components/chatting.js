@@ -3,9 +3,14 @@ import WAWeb from "whatsapp-web.js";
 import request from "request";
 import vuri from "valid-url";
 import fs from "fs";
+
+import wwPkg from "whatsapp-web.js";
+
 import { client } from "../api.js";
 import path from "path";
 import { fileURLToPath } from "url";
+
+const { Chat } = wwPkg;
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -207,6 +212,45 @@ router.get("/getchats", async (req, res) => {
     .getChats()
     .then((chats) => {
       res.send({ status: "success", message: chats });
+    })
+    .catch((e) => {
+      console.log(e);
+      res.send({ status: "error", message: "getchatserror" });
+    });
+});
+
+router.post("/deleteAllUnknownContact", async (req, res) => {
+  const limit = req.body.limit;
+  const fromTimestamp = req.body.fromTimestamp;
+  const toTimestamp = req.body.toTimestamp;
+  const deleteAll = req.body.deleteAll;
+  // const page = req.body.page;
+  // const chatId = req.body.chatId;
+
+  // from - 1661886541, to - 1661886408
+  client
+    .getChats()
+    .then(async (chats) => {
+      let unknownContactChats = chats;
+      if (fromTimestamp) {
+        unknownContactChats = unknownContactChats.filter(
+          (v) => v.timestamp >= Number(fromTimestamp)
+        );
+      }
+      if (toTimestamp) {
+        unknownContactChats = unknownContactChats.filter(
+          (v) => v.timestamp <= Number(toTimestamp)
+        );
+      }
+      if (limit) {
+        unknownContactChats = unknownContactChats.slice(0, limit);
+      }
+      if (deleteAll) {
+        unknownContactChats.map(async (v) => {
+          await v.delete(true);
+        });
+      }
+      res.send({ status: "success", message: unknownContactChats });
     })
     .catch((e) => {
       console.log(e);
